@@ -23,7 +23,7 @@
             } catch (error) {
                 console.error('Fetch error:', error)
             }
-        }, 600)
+        }, 800)
     </script>
 </body>
 

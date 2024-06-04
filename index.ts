@@ -32,9 +32,7 @@ let server = Bun.serve({
 
         if (filesChanged == true) {
             if (process.env.DEBUG == '1' || process.env.DEBUG == undefined) {
-                console.log("Recreating html files...")
                 makeRoutes()
-                console.log("Done recreating html files!")
             }
         }
 
