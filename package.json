@@ -15,6 +15,7 @@
   "dependencies": {
     "@types/nunjucks": "^3.2.6",
     "hono": "^4.4.3",
+    "install": "^0.13.0",
     "livereload": "^0.9.3",
     "nunjucks": "^3.2.4"
   }

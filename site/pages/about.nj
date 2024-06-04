@@ -8,4 +8,7 @@ About Page
 
 <h1>About page</h1>
 
+<a href="/">Go to landing</a>
+
 {% endblock %}
+
