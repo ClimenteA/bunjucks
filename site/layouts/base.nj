@@ -10,6 +10,21 @@
 <body>
     {% block body %}
     {% endblock %}
+
+    <script>
+        setInterval(async () => {
+            try {
+                const response = await fetch('http://localhost:3000/__reload');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`)
+                }
+                const data = await response.text()
+                if (data == "Reload true") location.reload()
+            } catch (error) {
+                console.error('Fetch error:', error)
+            }
+        }, 600)
+    </script>
 </body>
 
 </html>
