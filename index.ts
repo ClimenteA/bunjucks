@@ -1,28 +1,56 @@
 import fs from "node:fs"
-import nunjucks from "nunjucks"
 import { watch } from "fs"
+import { readdir } from "node:fs/promises"
+import nunjucks from "nunjucks"
+import path from "path"
 
-
-if (!fs.existsSync("dist")) fs.mkdirSync("dist")
-
+let pagesPath = "./site/pages"
 let routes: { [key: string]: string } = {}
 
-function makeRoutes() {
-
+async function makeRoutes() {
+    if (!fs.existsSync("dist")) fs.mkdirSync("dist")
     nunjucks.configure('site', { autoescape: true })
 
-    fs.readdirSync("./site/pages").forEach(filename => {
+    let files = await readdir(pagesPath, { recursive: true })
 
-        let noExtFilename = filename.replace(".nj", "")
-        let htmlFilename = filename.replace(".nj", ".html")
-        let exportHTMLFilepath = `./dist/${htmlFilename}`
+    for (let file of files) {
+        let fullpath = path.join(pagesPath, file)
 
-        fs.writeFileSync(exportHTMLFilepath, nunjucks.render(`pages/${filename}`))
+        if (fs.lstatSync(fullpath).isFile()) {
 
-        if (noExtFilename == "index") routes["/"] = exportHTMLFilepath
-        else routes["/" + noExtFilename] = exportHTMLFilepath
+            if (fullpath.startsWith("site/pages/index.")) {
+                let exportPath = "./dist/index.html"
+                routes["/"] = exportPath
+                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+            } else {
 
-    })
+                let nestedPathLen = file.split("/").length
+
+                if (nestedPathLen == 1) {
+                    let filename = path.basename(file).replace(".nj", "").replace(".html", "")
+                    let exportPath = `./dist/${filename}.html`
+                    routes["/" + filename] = exportPath
+                    fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+                } else if (nestedPathLen == 2) {
+                    let subRoute = file.split("/")[0]
+                    let filename = path.basename(file).replace(".nj", "").replace(".html", "")
+                    let exportPath = `./dist/${subRoute}/${filename}.html`
+                    if (filename == "index") {
+                        routes[`/${subRoute}`] = exportPath
+                    } else {
+                        routes[`/${subRoute}/${filename}`] = exportPath
+                    }
+                    fs.mkdirSync(path.dirname(exportPath), { recursive: true })
+                    fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+                } else {
+                    throw new Error('Only 1 level nested directories are allowed')
+                }
+            }
+        }
+    }
+
+    console.log("Routes", routes)
+
 }
 
 let filesChanged = true
@@ -32,7 +60,7 @@ let server = Bun.serve({
 
         if (filesChanged == true) {
             if (process.env.DEBUG == '1' || process.env.DEBUG == undefined) {
-                makeRoutes()
+                makeRoutes().then(res => console.log("HTML files created"))
             }
         }
 

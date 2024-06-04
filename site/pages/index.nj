@@ -10,4 +10,6 @@ Landing Page
 
 <a href="/about">Go to about</a>
 
+<a href="/blog">Go to blog</a>
+
 {% endblock %}

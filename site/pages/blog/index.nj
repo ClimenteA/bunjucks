@@ -1,0 +1,16 @@
+{% extends "layouts/base.nj" %}
+
+{% block title -%}
+Blog Page
+{%- endblock %}
+
+{% block body %}
+
+<h1>Blog Posts</h1>
+
+<a href="/">Go to landing</a>
+
+
+<a href="/blog/how-to-make-a-server">how to make a server</a>
+
+{% endblock %}
