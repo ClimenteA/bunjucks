@@ -1,0 +1,13 @@
+{% extends "layouts/base.nj" %}
+
+{% block title -%}
+Landing Page
+{%- endblock %}
+
+{% block body %}
+
+<h1>Landing page</h1>
+
+<a href="/about">Go to about</a>
+
+{% endblock %}

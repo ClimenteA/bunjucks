@@ -1,0 +1,21 @@
+{
+  "name": "softgata-website",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "binary": "bun build ./index.ts --compile --outfile server",
+    "dev": "bun --watch index.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/nunjucks": "^3.2.6",
+    "hono": "^4.4.3",
+    "livereload": "^0.9.3",
+    "nunjucks": "^3.2.4"
+  }
+}

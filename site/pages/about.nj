@@ -1,0 +1,11 @@
+{% extends "layouts/base.nj" %}
+
+{% block title -%}
+About Page
+{%- endblock %}
+
+{% block body %}
+
+<h1>About page</h1>
+
+{% endblock %}
