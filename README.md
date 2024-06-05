@@ -9,6 +9,12 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 - `bun install` dependencies;
 - `bun run dev` when developing (has hot reload);
 - `bun run build` to create the static website from templates;
+- `.env` file has the following default configs:
+```bash
+DEBUG=1             # 1 while developing, 0 for production
+PORT=5173           # port used by Bun to serve static files
+DOMAIN=example.com  # domain used to create sitemap.xml, robots.txt
+```
 
 
 Folder structure:
