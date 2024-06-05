@@ -6,11 +6,12 @@ import path from "path"
 
 let PORT = process.env.PORT || 3000
 let DOMAIN = process.env.domain || "localhost:" + PORT
-let DEBUG = process.env.DEBUG == '1'
+let DEBUG = process.env.BUILD ? false : process.env.DEBUG == '1'
 let assetsPath = "./site/assets"
 let pagesPath = "./site/pages"
 let routes: { [key: string]: string } = {}
 
+console.log(`DOMAIN:${DOMAIN}, PORT:${PORT}, DEBUG:${DEBUG}, BUILD:${process.env.BUILD}`)
 
 async function makeRoutes() {
 
@@ -67,7 +68,7 @@ async function makeRoutes() {
 
         let staticFilename = path.basename(fullpath)
 
-        if (staticFilename == "reload.js") {
+        if (staticFilename == "reload.js" && DEBUG) {
             let exportPath = "./dist/assets/reload.js"
             routes["/assets/reload.js"] = exportPath
             fs.writeFileSync(exportPath, nunjucks.render("assets/reload.js", { port: PORT, debug: DEBUG }))
@@ -116,45 +117,61 @@ let filesChanged = true
 
 makeRoutes().then(res => console.log("HTML files created"))
 
-let server = Bun.serve({
-    fetch(req) {
 
-        if (filesChanged == true) {
-            if (DEBUG) {
-                makeRoutes().then(res => console.log("HTML files created"))
-            }
-        }
+if (process.env.BUILD == undefined) {
 
-        const url = new URL(req.url)
+    Bun.serve({
+        fetch(req) {
 
-        if (url.pathname.includes("__reload") && DEBUG) {
             if (filesChanged == true) {
-                filesChanged = false
-                return new Response("Reload true")
-            } else {
-                return new Response("Reload false")
+                if (DEBUG) {
+                    makeRoutes().then(res => console.log("HTML files created"))
+                }
             }
-        }
 
-        if (routes[url.pathname]) {
-            return new Response(Bun.file(routes[url.pathname]))
-        }
+            const url = new URL(req.url)
 
-        return new Response("Page does not exist!")
-    },
-    development: DEBUG,
-    port: PORT,
-})
+            if (url.pathname.includes("__reload") && DEBUG) {
+                if (filesChanged == true) {
+                    filesChanged = false
+                    return new Response("Reload true")
+                } else {
+                    return new Response("Reload false")
+                }
+            }
 
-if (DEBUG) {
-    watch(
-        import.meta.dir + "/site",
-        { recursive: true },
-        (event, filename) => {
-            filesChanged = true
-            console.log(`Detected ${event} in ${filename}`)
+            if (routes[url.pathname]) {
+                return new Response(Bun.file(routes[url.pathname]))
+            }
+
+            return new Response("Page does not exist!")
         },
-    )
+        development: DEBUG,
+        port: PORT,
+    })
+
+    if (DEBUG) {
+        watch(
+            import.meta.dir + "/site",
+            { recursive: true },
+            (event, filename) => {
+                filesChanged = true
+                console.log(`Detected ${event} in ${filename}`)
+            },
+        )
+    }
+
+    console.log("Server started on port: ", PORT)
+
+} else {
+
+    console.log("")
 }
 
-console.log(`Listening on http://${server.hostname}:${server.port} ...`)
+// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css
+// BUILD=1 bun index.ts
+// bun build ./index.ts --compile --outfile server
+// echo 'Checkout website folder!'
+
+
+// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css & bun build ./index.ts --compile --outfile website/server & BUILD=1 bun index.ts
