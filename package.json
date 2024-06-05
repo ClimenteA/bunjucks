@@ -4,7 +4,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "bun build ./index.ts --compile --outfile server",
+    "build": "DEBUG=0 bun build ./index.ts --compile --outfile server",
     "dev": "bun --watch index.ts & npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch",
     "tailwind": "npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch"
   },

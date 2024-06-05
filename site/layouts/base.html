@@ -10,16 +10,16 @@
     <title>{% block title %}{% endblock %}</title>
 </head>
 
-<body>
+{{ navbar.render() }}
 
-    {{ navbar.render() }}
-
+<main class="container mx-auto">
     {% block body %}
     {% endblock %}
+</main>
 
-    {% if debug %}
-    <script src="/assets/reload.js"></script>
-    {% endif %}
+{% if debug %}
+<script src="/assets/reload.js"></script>
+{% endif %}
 </body>
 
 </html>

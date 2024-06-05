@@ -99,6 +99,8 @@ async function makeRoutes() {
         }
         else {
 
+            if (staticFilename == "tailwind.css") continue
+
             let exportPath = `./dist/assets/${staticFilename}`
 
             let bunFile = Bun.file(fullpath)
