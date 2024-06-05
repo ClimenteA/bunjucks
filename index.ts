@@ -82,9 +82,7 @@ async function makeRoutes() {
             let exportPath = "./dist/sitemap.xml"
             routes["/sitemap.xml"] = exportPath
 
-            let urls = Array.from(Object.keys(routes)).filter(route =>
-                !["robots.txt", "sitemap.xml", "reload.js"].some(suffix => route.endsWith(suffix))
-            )
+            let urls = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
 
             fs.writeFileSync(
                 exportPath,
