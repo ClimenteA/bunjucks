@@ -29,6 +29,7 @@ site
 ├── assets
 │   ├── reload.js    -> /assets/reload.js
 │   ├── robots.txt   -> /robots.txt
+│   ├── styles.css   -> /styles.css
 │   └── sitemap.xml  -> /sitemap.xml
 ├── layouts
 │   └── base.html

@@ -102,13 +102,10 @@ async function makeRoutes() {
             if (staticFilename == "tailwind.css") continue
 
             let exportPath = `./dist/assets/${staticFilename}`
-
-            let bunFile = Bun.file(fullpath)
-            let fileContents = await bunFile.text()
-
             routes[`/assets/${staticFilename}`] = exportPath
+            let bunFile = Bun.file(fullpath)
             fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-            fs.writeFileSync(exportPath, fileContents)
+            await Bun.write(exportPath, bunFile)
 
         }
     }
