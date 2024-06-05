@@ -4,7 +4,7 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "binary": "bun build ./index.ts --compile --outfile server",
+    "build": "bun build ./index.ts --compile --outfile server",
     "dev": "bun --watch index.ts"
   },
   "devDependencies": {
