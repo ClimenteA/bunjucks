@@ -27,13 +27,13 @@ async function makeRoutes() {
                 let nestedPathLen = file.split("/").length
 
                 if (nestedPathLen == 1) {
-                    let filename = path.basename(file).replace(".nj", "").replace(".html", "")
+                    let filename = path.basename(file).replace(".html", "").replace(".html", "")
                     let exportPath = `./dist/${filename}.html`
                     routes["/" + filename] = exportPath
                     fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
                 } else if (nestedPathLen == 2) {
                     let subRoute = file.split("/")[0]
-                    let filename = path.basename(file).replace(".nj", "").replace(".html", "")
+                    let filename = path.basename(file).replace(".html", "").replace(".html", "")
                     let exportPath = `./dist/${subRoute}/${filename}.html`
                     if (filename == "index") {
                         routes[`/${subRoute}`] = exportPath
@@ -55,18 +55,20 @@ async function makeRoutes() {
 
 let filesChanged = true
 
+makeRoutes().then(res => console.log("HTML files created"))
+
 let server = Bun.serve({
     fetch(req) {
 
         if (filesChanged == true) {
-            if (process.env.DEBUG == '1' || process.env.DEBUG == undefined) {
+            if (process.env.DEBUG == '1') {
                 makeRoutes().then(res => console.log("HTML files created"))
             }
         }
 
         const url = new URL(req.url)
 
-        if (url.pathname.includes("__reload")) {
+        if (url.pathname.includes("__reload") && process.env.DEBUG == '1') {
             if (filesChanged == true) {
                 filesChanged = false
                 return new Response("Reload true")
@@ -85,14 +87,15 @@ let server = Bun.serve({
     port: process.env.PORT || 3000,
 })
 
-
-watch(
-    import.meta.dir + "/site",
-    { recursive: true },
-    (event, filename) => {
-        filesChanged = true
-        console.log(`Detected ${event} in ${filename}`)
-    },
-)
+if (process.env.DEBUG == '1') {
+    watch(
+        import.meta.dir + "/site",
+        { recursive: true },
+        (event, filename) => {
+            filesChanged = true
+            console.log(`Detected ${event} in ${filename}`)
+        },
+    )
+}
 
 console.log(`Listening on http://${server.hostname}:${server.port} ...`)
