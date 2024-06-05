@@ -1,4 +1,9 @@
+
 # Bunjucks
+
+<p align="center">
+    <img src="bunjucks.jpeg" style="display: flex; justify-self: center" alt="drawing" width="150"/>
+</p>
 
 Create static html static websites with [Nunjucks](https://mozilla.github.io/nunjucks/) (uses [Bun](https://bun.sh/) under the hood). If you know Jinja2 or Nunjucks creating static websites will be a breeze. Of course, you can switch Nunjucks with other templating language you want [doT](https://olado.github.io/doT/), [handlebarsjs](https://handlebarsjs.com/), [ejs](https://ejs.co/), [underscorejs](https://underscorejs.org/) etc.
 
@@ -7,7 +12,7 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 
 - Clone this repository;
 - `bun install` dependencies;
-- `bun run dev` when developing (has hot reload);
+- `bun run dev` when developing (has hot reload with tailwind);
 - `bun run build` to create the static website from templates;
 - `.env` file has the following default configs:
 ```bash

@@ -6,6 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="/assets/styles.css" rel="stylesheet">
     <title>{% block title %}{% endblock %}</title>
 </head>
 
@@ -16,7 +17,9 @@
     {% block body %}
     {% endblock %}
 
+    {% if debug %}
     <script src="/assets/reload.js"></script>
+    {% endif %}
 </body>
 
 </html>

@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "build": "bun build ./index.ts --compile --outfile server",
-    "dev": "bun --watch index.ts"
+    "dev": "bun --watch index.ts & npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch",
+    "tailwind": "npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch"
   },
   "devDependencies": {
-    "@types/bun": "latest"
+    "@types/bun": "latest",
+    "tailwindcss": "^3.4.3"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

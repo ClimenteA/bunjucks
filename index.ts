@@ -32,7 +32,7 @@ async function makeRoutes() {
         if (fullpath.startsWith("site/pages/index.")) {
             let exportPath = "./dist/index.html"
             routes["/"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+            fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
         } else {
 
             let nestedPathLen = file.split("/").length
@@ -41,7 +41,7 @@ async function makeRoutes() {
                 let filename = path.basename(file).replace(".html", "").replace(".html", "")
                 let exportPath = `./dist/${filename}.html`
                 routes["/" + filename] = exportPath
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
             } else if (nestedPathLen == 2) {
                 let subRoute = file.split("/")[0]
                 let filename = path.basename(file).replace(".html", "").replace(".html", "")
@@ -52,7 +52,7 @@ async function makeRoutes() {
                     routes[`/${subRoute}/${filename}`] = exportPath
                 }
                 fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`))
+                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
             } else {
                 throw new Error('Only 1 level nested directories are allowed')
             }
@@ -70,7 +70,7 @@ async function makeRoutes() {
         if (staticFilename == "reload.js") {
             let exportPath = "./dist/assets/reload.js"
             routes["/assets/reload.js"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render("assets/reload.js", { port: PORT }))
+            fs.writeFileSync(exportPath, nunjucks.render("assets/reload.js", { port: PORT, debug: DEBUG }))
         }
         else if (staticFilename == "robots.txt") {
             let exportPath = "./dist/robots.txt"
