@@ -2,28 +2,25 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/assets/styles.css" rel="stylesheet">
     <title>{% block title %}{% endblock %}</title>
 </head>
+<body class="container mx-auto">
 
-{{ navbar.render() }}
 
-<main class="container mx-auto">
+    {{ navbar.render() }}
 
-    <img class="mb-3" src="/assets/bunjucks.jpeg" width="200" alt="">
-
+    <img src="/assets/bunjucks.jpeg" width="200" alt="">
+    
     {% block body %}
     {% endblock %}
 
-</main>
 
-{% if debug %}
-<script src="/assets/reload.js"></script>
-{% endif %}
+    {% if debug %}
+    <script src="http://localhost:35729/assets/livereload.js"></script>
+    {% endif %}
 </body>
-
 </html>

@@ -1,0 +1,5 @@
+{
+    "port": 5173,
+    "domain": "localhost:5173",
+    "debug": true
+}

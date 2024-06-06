@@ -1,177 +1,256 @@
-import fs from "node:fs"
-import { watch } from "fs"
-import { readdir } from "node:fs/promises"
-import nunjucks from "nunjucks"
 import path from "path"
+import fs from "fs/promises"
+import { readdir } from "fs/promises"
+import nunjucks from "nunjucks"
 
-let PORT = process.env.PORT || 3000
-let DOMAIN = process.env.domain || "localhost:" + PORT
-let DEBUG = process.env.BUILD ? false : process.env.DEBUG == '1'
-let assetsPath = "./site/assets"
-let pagesPath = "./site/pages"
-let routes: { [key: string]: string } = {}
 
-console.log(`DOMAIN:${DOMAIN}, PORT:${PORT}, DEBUG:${DEBUG}, BUILD:${process.env.BUILD}`)
+let CONFIG_PATH = "./bunjucks.config.json"
 
-async function makeRoutes() {
+interface Config {
+    port: number
+    domain: string
+    debug: boolean
+    store?: any
+}
 
+async function makeConfig(){
+    let defaultConfig: Config = {
+        port: 5173,
+        domain: "localhost:5173",
+        debug: true
+    }
+    Bun.write(CONFIG_PATH, JSON.stringify(defaultConfig , null, 4))
+    return defaultConfig
+}
+
+async function getConfig(){
+    let file = Bun.file(CONFIG_PATH)
+    let config: Config = await file.json()
+    return config
+}
+
+async function makeDirs() {
+    await fs.mkdir("./site/assets", {recursive: true})
+    await fs.mkdir("./site/layouts", {recursive: true})
+    await fs.mkdir("./site/macros", {recursive: true})
+    await fs.mkdir("./site/pages", {recursive: true})
+}
+
+async function makeReadMeFile() {
+
+    let readmeContents = `
+# Bunjucks
+
+Create custom static websites fast.
+
+- \`bun install\` - to install dependencies;
+- \`bun dev\` - to run site with hot reload while you are working on it;
+- \`bun build\` - to create index.html export;
+
+    `
+    Bun.write("./Readme.md", readmeContents)
+}
+
+async function makePackageJson() {
+
+    let defaultPackageJson = {
+        "name": "bunjucks",
+        "description": "Create html static sites with Bun and Nunjucks",
+        "module": "index.ts",
+        "type": "module",
+        "scripts": {
+          "build": "concurrently \"npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css\" \"bun build ./index.ts --compile --outfile ./website/server\" \"BUILD=1 bun index.ts\"",
+          "dev": "concurrently \"bun --watch index.ts\" \"npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch\""
+        },
+        "devDependencies": {
+          "@types/bun": "latest",
+          "tailwindcss": "^3.4.3"
+        },
+        "peerDependencies": {
+          "typescript": "^5.0.0"
+        },
+        "dependencies": {
+          "@types/nunjucks": "^3.2.6",
+          "concurrently": "^8.2.2",
+          "nunjucks": "^3.2.4"
+        }
+      }
+
+    Bun.write("./package.json", JSON.stringify(defaultPackageJson , null, 4))
+    
+}
+
+async function makeReloadJs() {
+
+    let reloadJsContent = `
+document.addEventListener('DOMContentLoaded', (event) => {
+    let intervalId = setInterval(async () => {
+        try {
+            let response = await fetch('http://localhost:{{ port }}/__reload')
+            if (!response.ok) {
+                throw new Error(\`HTTP error! status: \${response.status}\`)
+            }
+            let data = await response.text()
+            if (data === "Reload true") {
+                clearInterval(intervalId)
+                location.reload()
+            }
+        } catch (error) {
+            console.error('Fetch error:', error)
+            clearInterval(intervalId)
+        }
+    }, 800)
+})
+`
+    Bun.write("./site/assets/reload.js", reloadJsContent)
+
+}
+
+async function makeCSSFiles() {
+    let tailwindCss = `@tailwind base;
+@tailwind components;
+@tailwind utilities;
+`
+    Bun.write("./site/assets/tailwind.css", tailwindCss)
+    Bun.write("./site/assets/styles.css", "/* Here tailwind will compute css */")
+
+}
+
+async function makeTailwindConfigFile() {
+    let tailwindConfig = `/** @type {import('tailwindcss').Config} */
+export default {
+  content: ["./site/**/*.{html,js}"],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+`
+    Bun.write("./tailwind.config.js", tailwindConfig)
+}
+
+
+async function makeTsConfigJson() {
+    let tsconfig = {
+        "compilerOptions": {
+          "lib": ["ESNext", "DOM"],
+          "target": "ESNext",
+          "module": "ESNext",
+          "moduleDetection": "force",
+          "jsx": "react-jsx",
+          "allowJs": true,
+          "moduleResolution": "bundler",
+          "allowImportingTsExtensions": true,
+          "verbatimModuleSyntax": true,
+          "noEmit": true,
+          "strict": true,
+          "skipLibCheck": true,
+          "noFallthroughCasesInSwitch": true,
+          "noUnusedLocals": false,
+          "noUnusedParameters": false,
+          "noPropertyAccessFromIndexSignature": false
+        }
+    }
+
+    Bun.write("./tsconfig.json", JSON.stringify(tsconfig, null, 4))
+      
+}
+
+async function serveConfig() {
+    let serveContent = {
+        "cleanUrls": true
+    }
+    Bun.write("./serve.json", JSON.stringify(serveContent, null, 4))
+}
+
+
+async function collectFiles() {
+    
+    let cfg = await getConfig()
+    let filepaths = await readdir("./site", { recursive: true })
+
+    for (let fp of filepaths) {
+
+        let relPath = "./site/" + fp
+        if ((await fs.lstat(relPath)).isDirectory()) continue
+        if (fp == "assets/tailwind.css") continue
+        
+        if (fp.startsWith("pages")) {
+            let publicPath = "./public/" + fp.split("/").splice(1,).join("/")
+            await fs.mkdir(path.dirname(publicPath), { recursive: true })
+            await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
+        } 
+        
+        if (fp.startsWith("assets")) {
+            
+            if (fp.endsWith(".js")) {
+                let publicPath = "./public/" + fp
+                await fs.mkdir(path.dirname(publicPath), { recursive: true })
+                await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
+            } else {
+                let publicPath = "./public/" + fp
+                let bunFile = Bun.file(relPath)
+                await fs.mkdir(path.dirname(publicPath), { recursive: true })
+                await Bun.write(publicPath, bunFile)
+            }
+        } 
+    }
+
+}
+
+async function makeDefaultSite() {
+    
     nunjucks.configure('site', { autoescape: true })
 
-    if (!fs.existsSync("dist/assets")) {
-        fs.mkdirSync("dist/assets", { recursive: true })
-    }
-
-    let staticFiles = await readdir(assetsPath)
-    let files = await readdir(pagesPath, { recursive: true })
-
-    // Pages routes
-    for (let file of files) {
-        let fullpath = path.join(pagesPath, file)
-
-        if (!fs.lstatSync(fullpath).isFile()) continue
-
-        if (fullpath.startsWith("site/pages/index.")) {
-            let exportPath = "./dist/index.html"
-            routes["/"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-        } else {
-
-            let nestedPathLen = file.split("/").length
-
-            if (nestedPathLen == 1) {
-                let filename = path.basename(file).replace(".html", "").replace(".html", "")
-                let exportPath = `./dist/${filename}.html`
-                routes["/" + filename] = exportPath
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-            } else if (nestedPathLen == 2) {
-                let subRoute = file.split("/")[0]
-                let filename = path.basename(file).replace(".html", "").replace(".html", "")
-                let exportPath = `./dist/${subRoute}/${filename}.html`
-                if (filename == "index") {
-                    routes[`/${subRoute}`] = exportPath
-                } else {
-                    routes[`/${subRoute}/${filename}`] = exportPath
-                }
-                fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-            } else {
-                throw new Error('Only 1 level nested directories are allowed')
-            }
-        }
-    }
+    await collectFiles()
 
 
-    // Assets, robot.txt, sitemap.xml routes
-    for (let file of staticFiles) {
-        let fullpath = path.join(assetsPath, file)
-        if (!fs.lstatSync(fullpath).isFile()) continue
+    // assets: []CollectedPath = assetsFiles.map(item => {nun: `assets/${item}`, relPath: `./site/assets/${item}`})
 
-        let staticFilename = path.basename(fullpath)
+    // let layoutsFiles = await readdir("./site/layouts", { recursive: true })
+    // layouts = layoutsFiles.map(item => `layouts/${item}`)
 
-        if (staticFilename == "reload.js" && DEBUG) {
-            let exportPath = "./dist/assets/reload.js"
-            routes["/assets/reload.js"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render("assets/reload.js", { port: PORT, debug: DEBUG }))
-        }
-        else if (staticFilename == "robots.txt") {
-            let exportPath = "./dist/robots.txt"
-            routes["/robots.txt"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render("assets/robots.txt", { domain: DOMAIN }))
-        }
-        else if (staticFilename == "sitemap.xml") {
-            let timestamp = new Date().toISOString()
-            let exportPath = "./dist/sitemap.xml"
-            routes["/sitemap.xml"] = exportPath
+    // let macrosFiles = await readdir("./site/macros", { recursive: true })
+    // macros = macrosFiles.map(item => `macros/${item}`)
 
-            let urls = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
+    // let pagesFiles = await readdir("./site/pages", { recursive: true })
+    // pages = pagesFiles.map(item => `pages/${item}`)
 
-            fs.writeFileSync(
-                exportPath,
-                nunjucks.render("assets/sitemap.xml",
-                    {
-                        domain: DOMAIN,
-                        routes: urls,
-                        timestamp: timestamp
-                    }
-                )
-            )
-        }
-        else {
+    // console.log("\nFiles:")
+    // console.log("assets:", assets)
+    // console.log("layouts:", layouts)
+    // console.log("macros:", macros)
+    // console.log("pages:", pages)
 
-            if (staticFilename == "tailwind.css") continue
+    // await fs.mkdir("./public/assets", {recursive: true})
 
-            let exportPath = `./dist/assets/${staticFilename}`
-            routes[`/assets/${staticFilename}`] = exportPath
-            let bunFile = Bun.file(fullpath)
-            fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-            await Bun.write(exportPath, bunFile)
+    // fs.copyFile()
 
-        }
-    }
-
-    console.log("Routes", routes)
 
 }
 
-let filesChanged = true
+async function initialize() {
+    // await makeConfig()
+    // await makeDirs()
+    // await makeReadMeFile()
+    // await makePackageJson()
+    // await makeReloadJs()
+    // await makeCSSFiles()
+    // await makeTailwindConfigFile()
+    // await makeTsConfigJson()
+    // await serveConfig()
 
-makeRoutes().then(res => console.log("HTML files created"))
+    await makeDefaultSite()
 
+    return ""
+    
+// `
+// Nice 😁
 
-if (process.env.BUILD == undefined) {
-
-    Bun.serve({
-        fetch(req) {
-
-            if (filesChanged == true) {
-                if (DEBUG) {
-                    makeRoutes().then(res => console.log("HTML files created"))
-                }
-            }
-
-            const url = new URL(req.url)
-
-            if (url.pathname.includes("__reload") && DEBUG) {
-                if (filesChanged == true) {
-                    filesChanged = false
-                    return new Response("Reload true")
-                } else {
-                    return new Response("Reload false")
-                }
-            }
-
-            if (routes[url.pathname]) {
-                return new Response(Bun.file(routes[url.pathname]))
-            }
-
-            return new Response("Page does not exist!")
-        },
-        development: DEBUG,
-        port: PORT,
-    })
-
-    if (DEBUG) {
-        watch(
-            import.meta.dir + "/site",
-            { recursive: true },
-            (event, filename) => {
-                filesChanged = true
-                console.log(`Detected ${event} in ${filename}`)
-            },
-        )
-    }
-
-    console.log("Server started on port: ", PORT)
-
-} else {
-
-    console.log("")
+// Next, run the followind commands:
+// - bun install;
+// - bun dev;
+// `
 }
 
-// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css
-// BUILD=1 bun index.ts
-// bun build ./index.ts --compile --outfile server
-// echo 'Checkout website folder!'
-
-
-// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css & bun build ./index.ts --compile --outfile website/server & BUILD=1 bun index.ts
+initialize().then(res => console.log(res))
