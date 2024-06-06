@@ -8,17 +8,17 @@
     <link href="/assets/styles.css" rel="stylesheet">
     <title>{% block title %}{% endblock %}</title>
 </head>
-<body class="container mx-auto">
+<body class="flex flex-col items-center">
 
     {{ navbar.render() }}
 
-    <img src="/assets/bunjucks.jpeg" width="200" alt="">
+    <img src="/assets/bunjucks.jpeg" class="mb-3" width="200" alt="">
     
     {% block body %}
     {% endblock %}
 
     {% if debug %}
-    <script src="http://localhost:35729/assets/livereload.js"></script>
+    <script src="/assets/reload.js"></script>
     {% endif %}
 </body>
 </html>
