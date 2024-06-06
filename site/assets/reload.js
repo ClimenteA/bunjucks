@@ -1,4 +1,4 @@
-
+// TODO: use websockets
 document.addEventListener('DOMContentLoaded', (event) => {
     let intervalId = setInterval(async () => {
         try {

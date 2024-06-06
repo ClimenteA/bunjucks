@@ -11,15 +11,11 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 ## Quickstart
 
 - Clone this repository;
-- `bun install` dependencies;
-- `bun run dev` when developing (has hot reload with tailwind);
-- `bun run build` to create the static website from templates;
-- `.env` file has the following default configs:
-```bash
-DEBUG=1             # 1 while developing, 0 for production
-PORT=5173           # port used by Bun to serve static files
-DOMAIN=example.com  # domain used to create sitemap.xml, robots.txt
-```
+- 
+- `bun run index.ts`: build `public` folder with static website from `site` folder;
+- `PROD=1 bun run index.ts`: serve public static website in production;
+- [`serve -l 5173`](https://www.npmjs.com/package/serve): inside public folder you could run serve from vercel;
+
 
 
 Folder structure:
