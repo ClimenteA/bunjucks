@@ -20,7 +20,6 @@ async function getConfig(){
     return config
 }
 
-
 async function getRoutes(){
 
     let routes: {[key: string]: string } = {}
@@ -45,7 +44,6 @@ async function getRoutes(){
     
     return routes
 }
-
 
 async function tailwindBuild() {
     await $`npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`.text()
@@ -102,7 +100,6 @@ async function buildStaticSite(cfg: Config, filename: string) {
 
 }
 
-
 async function runInDevMode() {
 
     let cfg = await getConfig()
@@ -154,7 +151,6 @@ async function runInDevMode() {
 
 }
 
-
 async function runInProdMode() {
 
     let cfg = await getConfig()
@@ -198,6 +194,7 @@ async function main(){
         await runInDevMode()
     }
 }
+
 
 
 await main()
