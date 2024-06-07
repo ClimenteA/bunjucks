@@ -582,12 +582,20 @@ video {
   display: flex;
 }
 
+.max-w-\[600px\] {
+  max-width: 600px;
+}
+
 .flex-col {
   flex-direction: column;
 }
 
 .items-center {
   align-items: center;
+}
+
+.gap-2 {
+  gap: 0.5rem;
 }
 
 .text-center {

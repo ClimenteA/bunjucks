@@ -1,0 +1,22 @@
+{% extends "layouts/base.html" %}
+
+{% block title -%}
+Bunjucks
+{%- endblock %}
+
+{% block body %}
+
+<h1 class="text-2xl font-bold">Where to buy food?</h1>
+
+
+<p class="text-center max-w-[600px]">
+    From the market/supermarket make sure you have some cash.
+</p>
+
+<div class="flex gap-2">
+    <a class="text-blue-500 block mt-3" href="{{domain}}/">Home</a>
+    <a class="text-blue-500 block mt-3" href="{{domain}}/about">Go to about</a>
+    <a class="text-blue-500 block mt-3" href="{{domain}}/blog">Go to blog</a>
+</div>
+
+{% endblock %}

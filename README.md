@@ -5,7 +5,7 @@
     <img src="pics/bunjucks.jpeg" style="display: flex; justify-self: center" alt="drawing" width="150"/>
 </p>
 
-Create static html static websites with [Nunjucks](https://mozilla.github.io/nunjucks/) (uses [Bun](https://bun.sh/) under the hood). If you know Jinja2 or Nunjucks creating static websites will be a breeze. Of course, you can switch Nunjucks with other templating language you want [doT](https://olado.github.io/doT/), [handlebarsjs](https://handlebarsjs.com/), [ejs](https://ejs.co/), [underscorejs](https://underscorejs.org/) etc.
+Create custom static html static websites with [Nunjucks](https://mozilla.github.io/nunjucks/), [Bun](https://bun.sh/) and [TailwindCSS](https://tailwindcss.com/). If you know Jinja2 or Nunjucks creating static websites will be a breeze. Of course, you can switch Nunjucks with other templating language you want [doT](https://olado.github.io/doT/), [handlebarsjs](https://handlebarsjs.com/), [ejs](https://ejs.co/), [underscorejs](https://underscorejs.org/) etc. You can opt-out tailwind if you want. 
 
 
 ## Quickstart
@@ -23,22 +23,28 @@ Folder structure:
 ```shell
 site
 ├── assets
-│   ├── bunjucks.jpeg -> /assets/bunjucks.jpeg
-│   ├── reload.js     -> /assets/reload.js (when DEV=on)
-│   ├── styles.css    -> /assets/styles.css 
-│   └── tailwind.css  ignored
+│   ├── bunjucks.jpeg
+│   ├── reload.js
+│   ├── styles.css
+│   └── tailwind.css
 ├── layouts
 │   └── base.html
 ├── macros
 │   └── navbar.html
 └── pages
-    ├── about.html                      -> /about
-    ├── blog                            
-    │   ├── how-to-make-pancakes.html   -> /blog/how-to-make-pancakes
-    │   └── index.html                  -> /blog 
-    ├── index.html   -> / 
-    ├── robots.txt   -> /robots.txt  (for SEO)
-    └── sitemap.xml  -> /sitemap.xml (for SEO)
+    ├── 404
+    │   └── index.html            -> /404
+    ├── about
+    │   └── index.html            -> /about  
+    ├── blog
+    │   ├── how-to-make-pancakes  
+    │   │   ├── index.html        -> /blog/how-to-make-pancakes
+    │   │   └── where-to-buy-food 
+    │   │       └── index.html    -> /blog/how-to-make-pancakes/where-to-buy-food
+    │   └── index.html            -> /blog
+    ├── index.html                -> /
+    ├── robots.txt                -> /robots.txt  
+    └── sitemap.xml               -> /sitemap.xml
 ```
 
 You have `site` directory which holds the following:
@@ -85,16 +91,16 @@ In file `bunjucks.config.json` you have the following configuration:
 - In Netlify dashboard go to `Deploys` and click on `Trigger deploy` dropdown - select `Clear cache and deploy site`;
 
 
-## Deploy to any Cloud VM/VPS (AWS, AKAMAI, GCP etc)
+## Deploy to any Cloud VM/VPS (AWS, GCP, Azure, ROMARG)
 
-- In bunjucks.config.json add your domain: `"domain": "!mysite.com"` (put `!` in front of the domain in case you deploy to github pages);
+- In bunjucks.config.json add your domain: `"domain": "!mysite.com"` (put `!` in front of the domain if you use {{domain}} as a prefix for links, src - see gitub pages deploy);
 - Run `bun run build` rename `public` to `static-site` and place it next to `docker-compose.yml` and `Caddyfile` (Checkout `docker-deploy` inside this repo);
 - Install (if not already) docker on the VM;
 - Modify `Caddyfile` with your domain and email;
-- Run `docker-compose up -d`;
+- Run `docker-compose up -d` your website is now served with SSL by [Caddy](https://caddyserver.com/) (Note: depending on your hosting you may need to do some configuration on their dashboard);
 
 
 
-## Why?
+## Why another Static Site Generator (SSG)?
 
 Other static site generators are easy to use if you use a pre-made template, but it gets really hard when you want to create a custom template (tons of configs, you have to go thru tons of documentation, just try to create a custom template and you'll see what I mean). Yes, you could just use html, but it can get messy really quick for big pages/blogs. You write just html with some templating, no markdown, rst, etc. If you want markdown, rst you can use one of the existing static site generators available.

@@ -148,9 +148,9 @@ async function runInDevMode() {
 
             if (routes[url.pathname]) {
                 return new Response(Bun.file(routes[url.pathname]))
-            }
+            } 
 
-            return new Response("Page does not exist!")
+            return new Response(Bun.file(routes["/404"]))
         },
         development: true,
         port: cfg.port,
@@ -190,7 +190,7 @@ async function runInProdMode() {
                 return new Response(Bun.file(routes[url.pathname]))
             }
 
-            return new Response("Page does not exist!")
+            return new Response(Bun.file(routes["/404"]))
         },
         development: false,
         port: cfg.port,
