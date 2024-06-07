@@ -1,5 +1,5 @@
 {
     "port": 5173,
-    "domain": "localhost:5173",
+    "domain": "climentea.github.io/bunjucks",
     "use_tailwind": true
 }
