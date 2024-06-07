@@ -10,7 +10,7 @@
 </head>
 <body class="flex flex-col items-center">
 
-    {{ navbar.render() }}
+    {{ navbar.render(domain) }}
 
     <img src="{{domain}}/assets/bunjucks.jpeg" class="mb-3" width="200" alt="">
     
@@ -19,7 +19,7 @@
     {% endblock %}
 
     {% if debug %}
-    <script src="/assets/reload.js"></script>
+    <script src="{{domain}}/assets/reload.js"></script>
     {% endif %}
 </body>
 </html>

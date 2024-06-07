@@ -33,9 +33,11 @@ async function getRoutes(cfg: Config){
         if (fp.endsWith("index.html")) {
             let r = fp.replace("/index.html", "").replace("index.html", "")
             if (!r.startsWith("/")) r = "/" + r
+            if (cfg.domain.startsWith("/") && cfg.domain.length > 1) r = cfg.domain + r
             routes[r] = relPath
         } else {
             let r = "/" + fp.replace(".html", "")
+            if (cfg.domain.startsWith("/") && cfg.domain.length > 1) r = cfg.domain + r
             routes[r] = relPath
         }  
     } 

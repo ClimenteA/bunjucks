@@ -63,6 +63,13 @@ In file `bunjucks.config.json` you have the following configuration:
 }
 ```
 
+## Deploy to Github Pages
+
+- In github, go to Settings tab look for Pages on the left panel. On Pages, select branch main and folder docs then click save (a github action will run each time you push changes to repo);
+- In bunjucks.config.json add what comes after yourgithubusername.github.io/**repo-name** in my case it was /bunjucks: `"domain": "/bunjucks"`;
+- While adding links make sure to add the domain prefix to links and static files, like: `href="{{domain}}/etc/route`, `href="{{domain}}/blog"` (you don't need this if you deploy it with `serve` or `bun run prod`); 
+- Run `bun run build` and rename `public` folder generated to `docs`;
+
 
 
 ## Why?
