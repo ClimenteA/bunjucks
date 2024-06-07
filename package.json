@@ -4,9 +4,9 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build": "npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css & bun build ./index.ts --compile --outfile ./website/server & BUILD=1 bun index.ts",
-    "dev": "bun --watch index.ts & npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch",
-    "tailwind": "npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css --watch"
+    "build": "bun run index.ts",
+    "dev": "DEV=on bun run index.ts",
+    "prod": "DEV=off bun run index.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",

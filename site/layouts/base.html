@@ -2,28 +2,24 @@
 
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="/assets/styles.css" rel="stylesheet">
-    <title>{% block title %}{% endblock %}</title>
+    <title>{% block title %}{{ domain }}{% endblock %}</title>
 </head>
+<body class="flex flex-col items-center">
 
-{{ navbar.render() }}
+    {{ navbar.render() }}
 
-<main class="container mx-auto">
-
-    <img class="mb-3" src="/assets/bunjucks.jpeg" width="200" alt="">
-
+    <img src="/assets/bunjucks.jpeg" class="mb-3" width="200" alt="">
+    
+    
     {% block body %}
     {% endblock %}
 
-</main>
-
-{% if debug %}
-<script src="/assets/reload.js"></script>
-{% endif %}
+    {% if debug %}
+    <script src="/assets/reload.js"></script>
+    {% endif %}
 </body>
-
 </html>

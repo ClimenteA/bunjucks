@@ -1,137 +1,137 @@
-import fs from "node:fs"
-import { watch } from "fs"
-import { readdir } from "node:fs/promises"
-import nunjucks from "nunjucks"
+import { $ } from "bun"
 import path from "path"
+import fs from "fs/promises"
+import { watch } from "fs"
+import { readdir } from "fs/promises"
+import nunjucks from "nunjucks"
 
-let PORT = process.env.PORT || 3000
-let DOMAIN = process.env.domain || "localhost:" + PORT
-let DEBUG = process.env.BUILD ? false : process.env.DEBUG == '1'
-let assetsPath = "./site/assets"
-let pagesPath = "./site/pages"
-let routes: { [key: string]: string } = {}
 
-console.log(`DOMAIN:${DOMAIN}, PORT:${PORT}, DEBUG:${DEBUG}, BUILD:${process.env.BUILD}`)
+interface Config {
+    port: number
+    domain: string
+    use_tailwind: boolean
+    store?: any
+    debug?: boolean
+}
 
-async function makeRoutes() {
+async function getConfig(){
+    let file = Bun.file("./bunjucks.config.json")
+    let config: Config = await file.json()
+    return config
+}
+
+async function getRoutes(cfg: Config){
+
+    let routes: {[key: string]: string } = {}
+    let filepaths = await readdir("./public", { recursive: true })
+
+    for (let fp of filepaths) {
+        let relPath = "./public/" + fp
+        if ((await fs.lstat(relPath)).isDirectory()) continue
+        if (fp == "serve.json") continue
+
+        if (fp.endsWith("index.html")) {
+            let r = fp.replace("/index.html", "").replace("index.html", "")
+            if (!r.startsWith("/")) r = "/" + r
+            routes[r] = relPath
+        } else {
+            let r = "/" + fp.replace(".html", "")
+            routes[r] = relPath
+        }  
+    } 
+
 
     nunjucks.configure('site', { autoescape: true })
 
-    if (!fs.existsSync("dist/assets")) {
-        fs.mkdirSync("dist/assets", { recursive: true })
+    let timestamp = new Date().toISOString()
+    let sitemapRoutes = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
+
+    await fs.writeFile(
+        "./public/sitemap.xml", 
+        nunjucks.render(
+            "pages/sitemap.xml", 
+            {...cfg, routes: sitemapRoutes, timestamp: timestamp}
+        )
+    )
+
+    console.log("Routes:", routes)
+    
+    return routes
+}
+
+async function tailwindBuild() {
+    await $`npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`.text()
+}
+
+async function buildStaticSite(cfg: Config, filename: string) {
+
+    if (!(filename.endsWith(".html") || filename.endsWith(".css") || filename.endsWith(".js"))) {
+        return
     }
 
-    let staticFiles = await readdir(assetsPath)
-    let files = await readdir(pagesPath, { recursive: true })
+    let start = performance.now()   
+    
+    if (cfg.use_tailwind) {
+        await tailwindBuild()
+    }
+    
+    let filepaths = await readdir("./site", { recursive: true })
+    nunjucks.configure('site', { autoescape: true })
 
-    // Pages routes
-    for (let file of files) {
-        let fullpath = path.join(pagesPath, file)
+    for (let fp of filepaths) {
 
-        if (!fs.lstatSync(fullpath).isFile()) continue
+        let relPath = "./site/" + fp
+        if ((await fs.lstat(relPath)).isDirectory()) continue
+        if (fp == "assets/tailwind.css") continue
 
-        if (fullpath.startsWith("site/pages/index.")) {
-            let exportPath = "./dist/index.html"
-            routes["/"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-        } else {
-
-            let nestedPathLen = file.split("/").length
-
-            if (nestedPathLen == 1) {
-                let filename = path.basename(file).replace(".html", "").replace(".html", "")
-                let exportPath = `./dist/${filename}.html`
-                routes["/" + filename] = exportPath
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-            } else if (nestedPathLen == 2) {
-                let subRoute = file.split("/")[0]
-                let filename = path.basename(file).replace(".html", "").replace(".html", "")
-                let exportPath = `./dist/${subRoute}/${filename}.html`
-                if (filename == "index") {
-                    routes[`/${subRoute}`] = exportPath
-                } else {
-                    routes[`/${subRoute}/${filename}`] = exportPath
-                }
-                fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-                fs.writeFileSync(exportPath, nunjucks.render(`pages/${file}`, { debug: DEBUG }))
-            } else {
-                throw new Error('Only 1 level nested directories are allowed')
+        if (fp.startsWith("pages")) {
+            let publicPath = "./public/" + fp.split("/").splice(1,).join("/")
+            await fs.mkdir(path.dirname(publicPath), { recursive: true })
+            await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
+        } 
+        
+        if (fp.startsWith("assets")) {
+            if (fp.endsWith(".js")) {
+                if (fp.endsWith("reload.js") && cfg.debug == false) continue
+                let publicPath = "./public/" + fp
+                await fs.mkdir(path.dirname(publicPath), { recursive: true })
+                await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
+            }             
+            else {
+                let publicPath = "./public/" + fp
+                let bunFile = Bun.file(relPath)
+                await fs.mkdir(path.dirname(publicPath), { recursive: true })
+                await Bun.write(publicPath, bunFile)
             }
-        }
+        } 
     }
 
-
-    // Assets, robot.txt, sitemap.xml routes
-    for (let file of staticFiles) {
-        let fullpath = path.join(assetsPath, file)
-        if (!fs.lstatSync(fullpath).isFile()) continue
-
-        let staticFilename = path.basename(fullpath)
-
-        if (staticFilename == "reload.js" && DEBUG) {
-            let exportPath = "./dist/assets/reload.js"
-            routes["/assets/reload.js"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render("assets/reload.js", { port: PORT, debug: DEBUG }))
-        }
-        else if (staticFilename == "robots.txt") {
-            let exportPath = "./dist/robots.txt"
-            routes["/robots.txt"] = exportPath
-            fs.writeFileSync(exportPath, nunjucks.render("assets/robots.txt", { domain: DOMAIN }))
-        }
-        else if (staticFilename == "sitemap.xml") {
-            let timestamp = new Date().toISOString()
-            let exportPath = "./dist/sitemap.xml"
-            routes["/sitemap.xml"] = exportPath
-
-            let urls = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
-
-            fs.writeFileSync(
-                exportPath,
-                nunjucks.render("assets/sitemap.xml",
-                    {
-                        domain: DOMAIN,
-                        routes: urls,
-                        timestamp: timestamp
-                    }
-                )
-            )
-        }
-        else {
-
-            if (staticFilename == "tailwind.css") continue
-
-            let exportPath = `./dist/assets/${staticFilename}`
-            routes[`/assets/${staticFilename}`] = exportPath
-            let bunFile = Bun.file(fullpath)
-            fs.mkdirSync(path.dirname(exportPath), { recursive: true })
-            await Bun.write(exportPath, bunFile)
-
-        }
+    let servefp = "./public/serve.json"
+    if(!await fs.exists(servefp)) {
+        Bun.write(servefp, JSON.stringify({cleanUrls: true}, null, 4))
     }
 
-    console.log("Routes", routes)
+    console.log(`Done in ${(performance.now() - start).toFixed(2)} ms`)
 
 }
 
-let filesChanged = true
+async function runInDevMode() {
 
-makeRoutes().then(res => console.log("HTML files created"))
+    let cfg = await getConfig()
+    cfg.debug = true
+    console.log("Server config:", cfg)
 
-
-if (process.env.BUILD == undefined) {
+    await buildStaticSite(cfg, "index.html")
+    let routes = await getRoutes(cfg)
+    
+    let filesChanged = true
 
     Bun.serve({
-        fetch(req) {
-
-            if (filesChanged == true) {
-                if (DEBUG) {
-                    makeRoutes().then(res => console.log("HTML files created"))
-                }
-            }
+        async fetch(req) {
 
             const url = new URL(req.url)
 
-            if (url.pathname.includes("__reload") && DEBUG) {
+            if (url.pathname.includes("__reload")) {
                 if (filesChanged == true) {
                     filesChanged = false
                     return new Response("Reload true")
@@ -146,32 +146,70 @@ if (process.env.BUILD == undefined) {
 
             return new Response("Page does not exist!")
         },
-        development: DEBUG,
-        port: PORT,
+        development: true,
+        port: cfg.port,
     })
 
-    if (DEBUG) {
-        watch(
-            import.meta.dir + "/site",
-            { recursive: true },
-            (event, filename) => {
+    console.log("Watching 'site' for changes...")
+    watch(
+        import.meta.dir + "/site",
+        { recursive: true },
+        async (event, filename) => {
+            console.log(`Detected ${event} in ${filename}`)
+            if (filename){
+                await buildStaticSite(cfg, filename)
+                routes = await getRoutes(cfg)
                 filesChanged = true
-                console.log(`Detected ${event} in ${filename}`)
-            },
-        )
-    }
+            }
+        },
+    )
 
-    console.log("Server started on port: ", PORT)
-
-} else {
-
-    console.log("")
 }
 
-// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css
-// BUILD=1 bun index.ts
-// bun build ./index.ts --compile --outfile server
-// echo 'Checkout website folder!'
+async function runInProdMode() {
+
+    let cfg = await getConfig()
+    cfg.debug = false
+    console.log("Server config:", cfg)
+
+    let routes = await getRoutes(cfg)
+
+    Bun.serve({
+        async fetch(req) {
+
+            const url = new URL(req.url)
+
+            if (routes[url.pathname]) {
+                console.log(new Date().toISOString(), routes[url.pathname])
+                return new Response(Bun.file(routes[url.pathname]))
+            }
+
+            return new Response("Page does not exist!")
+        },
+        development: false,
+        port: cfg.port,
+        hostname: "0.0.0.0"
+    })
+
+}
+
+async function main(){
+    if (process.env.DEV == undefined) {
+        let cfg = await getConfig()
+        cfg.debug = false
+        await buildStaticSite(cfg, "index.html")
+        await getRoutes(cfg)
+    }
+    else if (process.env.DEV == "off") {
+        console.log("Waiting for requests...")
+        await runInProdMode()
+    }
+    else if (process.env.DEV == "on") {
+        console.log("Development mode...")
+        await runInDevMode()
+    }
+}
 
 
-// npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css & bun build ./index.ts --compile --outfile website/server & BUILD=1 bun index.ts
+
+await main()
