@@ -11,7 +11,7 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 ## Quickstart
 
 - Clone this repository;
-- To create a new route/page in the `pages` folder create a new html file. Make sure to name files/folders inside pages url-friendly (letters, numbers, and minus sign `-`).
+- To create a new route/page in `site/pages` directory create a new folder with the route path name (friendly url chars) and inside that folder create an `index.html` file with contents;
 - `bun run build`: this command will scan `site` folder and compile the static website in `public` folder;
 - `bun run dev`: use this command while working on the website for hot reload;
 - Run `bun run build` to generate prod static website then `bun run prod` to serve static website in prod; 
@@ -83,6 +83,16 @@ In file `bunjucks.config.json` you have the following configuration:
 ```
 - Create a Netlify account and point to your github repo containing your static site (like this repo);
 - In Netlify dashboard go to `Deploys` and click on `Trigger deploy` dropdown - select `Clear cache and deploy site`;
+
+
+## Deploy to any Cloud VM/VPS (AWS, AKAMAI, GCP etc)
+
+- In bunjucks.config.json add your domain: `"domain": "!mysite.com"` (put `!` in front of the domain in case you deploy to github pages);
+- Run `bun run build` rename `public` to `static-site` and place it next to `docker-compose.yml` and `Caddyfile` (Checkout `docker-deploy` inside this repo);
+- Install (if not already) docker on the VM;
+- Modify `Caddyfile` with your domain and email;
+- Run `docker-compose up -d`;
+
 
 
 ## Why?
