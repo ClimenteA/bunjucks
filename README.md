@@ -98,7 +98,7 @@ In file `bunjucks.config.json` you have the following configuration:
 - Install (if not already) docker on the VM;
 - Modify `Caddyfile` with your domain and email;
 - Run `docker-compose up -d` your website is now served with SSL by [Caddy](https://caddyserver.com/) (Note: depending on your hosting you may need to do some configuration on their dashboard);
-
+- In the `docker-deploy` folder in this repo you can see the configuration to deploy multiple static websites with Caddy.
 
 
 ## Why another Static Site Generator (SSG)?
