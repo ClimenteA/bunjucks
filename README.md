@@ -2,7 +2,7 @@
 # Bunjucks
 
 <p align="center">
-    <img src="bunjucks.jpeg" style="display: flex; justify-self: center" alt="drawing" width="150"/>
+    <img src="pics/bunjucks.jpeg" style="display: flex; justify-self: center" alt="drawing" width="150"/>
 </p>
 
 Create static html static websites with [Nunjucks](https://mozilla.github.io/nunjucks/) (uses [Bun](https://bun.sh/) under the hood). If you know Jinja2 or Nunjucks creating static websites will be a breeze. Of course, you can switch Nunjucks with other templating language you want [doT](https://olado.github.io/doT/), [handlebarsjs](https://handlebarsjs.com/), [ejs](https://ejs.co/), [underscorejs](https://underscorejs.org/) etc.
@@ -70,6 +70,19 @@ In file `bunjucks.config.json` you have the following configuration:
 - While adding links make sure to add the domain prefix to links and static files, like: `href="{{domain}}/etc/route`, `href="{{domain}}/blog"` (you don't need this if you deploy it with `serve` or `bun run prod`); 
 - Run `bun run build` and rename `public` folder generated to `docs`;
 
+
+## Deploy to Netlify
+
+- In bunjucks.config.json keep domain empty like this: `"domain": ""`;
+- Run `bun run build` and rename `public` to `netlify`;
+- Create a netlify.toml file and add the following configs:
+```toml
+[build]
+  base = "/"
+  publish = "netlify/"
+```
+- Create a Netlify account and point to your github repo containing your static site (like this repo);
+- In Netlify dashboard go to `Deploys` and click on `Trigger deploy` dropdown - select `Clear cache and deploy site`;
 
 
 ## Why?
