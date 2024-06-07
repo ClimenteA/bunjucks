@@ -1,0 +1,10 @@
+
+# change from .localhost to your extension (.com .ro etc)
+mysite.localhost {
+	
+	# tls yourEmailForSSL@gmail.com 
+
+	root * /srv
+	file_server browse
+
+}
