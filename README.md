@@ -12,9 +12,9 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 
 - Clone this repository;
 - To create a new route/page in the `pages` folder create a new html file. Make sure to name files/folders inside pages url-friendly (letters, numbers, and minus sign `-`).
-- `bun run index.ts`: this command will scan `site` folder and compile the static website in `public` folder;
-- `DEV=on bun run index.ts`: use this command while working on the website for hot reload;
-- Run `bun run index.ts` to generate prod static website then `DEV=off bun run index.ts` to serve static website in prod; 
+- `bun run build`: this command will scan `site` folder and compile the static website in `public` folder;
+- `bun run dev`: use this command while working on the website for hot reload;
+- Run `bun run build` to generate prod static website then `bun run prod` to serve static website in prod; 
 - To serve static website generated you could use [serve package from vercel](https://www.npmjs.com/package/serve) using this command `serve -l 5173` from inside public folder;
 
 
