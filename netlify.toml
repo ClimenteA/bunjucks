@@ -10,4 +10,4 @@
   # This sample publishes the directory located at the absolute 
   # path "root/project/build-output"
 
-  publish = "docs/"
+  publish = "netlify/"

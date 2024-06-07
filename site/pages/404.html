@@ -1,0 +1,15 @@
+{% extends "layouts/base.html" %}
+
+{% block title -%}
+Page not found
+{%- endblock %}
+
+
+{% block body %}
+
+<h1 class="text-2xl font-bold text-red">Page not found</h1>
+
+<a class="text-blue-500 block mt-3" href="{{domain}}/">Go to home</a>
+<a class="text-blue-500 block mt-3" href="{{domain}}/blog">Go to blog</a>
+
+{% endblock %}
