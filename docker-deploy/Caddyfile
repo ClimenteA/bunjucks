@@ -4,7 +4,16 @@ mysite.localhost {
 	
 	# tls yourEmailForSSL@gmail.com 
 
-	root * /srv
+	root * /srv/static-site-1
+	file_server browse
+
+}
+
+anothersite.localhost {
+	
+	# tls yourEmailForSSL@gmail.com 
+
+	root * /srv/static-site-2
 	file_server browse
 
 }
