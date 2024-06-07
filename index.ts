@@ -46,8 +46,6 @@ async function getRoutes(cfg: Config){
     let timestamp = new Date().toISOString()
     let sitemapRoutes = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
 
-    console.log(sitemapRoutes)
-    
     await fs.writeFile(
         "./public/sitemap.xml", 
         nunjucks.render(
