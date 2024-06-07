@@ -5,73 +5,67 @@ import { watch } from "fs"
 import { readdir } from "fs/promises"
 import nunjucks from "nunjucks"
 
-let PORT = 5173
-let DEBUG = true
-let DOMAIN = "localhost:5173"
-let CONFIG_PATH = "./bunjucks.config.json"
-
 
 interface Config {
     port: number
     domain: string
-    debug: boolean
+    use_tailwind: boolean
     store?: any
+    debug?: boolean
 }
 
 async function getConfig(){
-    let file = Bun.file(CONFIG_PATH)
+    let file = Bun.file("./bunjucks.config.json")
     let config: Config = await file.json()
-    PORT = config.port
-    DOMAIN = config.domain
-    DEBUG = config.debug
     return config
 }
 
 
-async function makeRoutes(filepaths: string[]){
+async function getRoutes(){
 
     let routes: {[key: string]: string } = {}
-
-    for (let p of filepaths){
-        if (p.endsWith("serve.json")) continue
-        if (p.includes("./public")) p = p.replace("./public", "")
-        if (p.endsWith("index.html")) {
-            let r = p.replace("/index.html", "")
-            if (r == "") r = "/"
-            routes[r] = p
-        } else {
-            let r = p.replace(".html", "")
-            routes[r] = p
-        }
-    }
-
-    return routes
-
-
-}
-
-async function getPublicRoutes(){
-    await getConfig()
-
     let filepaths = await readdir("./public", { recursive: true })
 
-    let publicPaths = []
     for (let fp of filepaths) {
         let relPath = "./public/" + fp
         if ((await fs.lstat(relPath)).isDirectory()) continue
-        publicPaths.push(relPath)
-    }
+        if (fp == "serve.json") continue
 
-    return await makeRoutes(publicPaths)
+        if (fp.endsWith("index.html")) {
+            let r = fp.replace("/index.html", "").replace("index.html", "")
+            if (!r.startsWith("/")) r = "/" + r
+            routes[r] = relPath
+        } else {
+            let r = "/" + fp.replace(".html", "")
+            routes[r] = relPath
+        }  
+    } 
+
+    console.log("Routes:", routes)
+    
+    return routes
 }
 
-async function buildStaticSite() {
+
+async function tailwindBuild() {
+    await $`npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`.text()
+}
+
+async function buildStaticSite(cfg: Config, filename: string) {
+
+    if (!(filename.endsWith(".html") || filename.endsWith(".css") || filename.endsWith(".js"))) {
+        return
+    }
+
+    let start = performance.now()   
     
-    let cfg = await getConfig()
+    if (cfg.use_tailwind) {
+        await tailwindBuild()
+    }
+    
     let filepaths = await readdir("./site", { recursive: true })
     nunjucks.configure('site', { autoescape: true })
 
-    let publicPaths = []
     for (let fp of filepaths) {
 
         let relPath = "./site/" + fp
@@ -82,21 +76,19 @@ async function buildStaticSite() {
             let publicPath = "./public/" + fp.split("/").splice(1,).join("/")
             await fs.mkdir(path.dirname(publicPath), { recursive: true })
             await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
-            publicPaths.push(publicPath)
         } 
         
         if (fp.startsWith("assets")) {
             if (fp.endsWith(".js")) {
+                if (fp.endsWith("reload.js") && cfg.debug == false) continue
                 let publicPath = "./public/" + fp
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
                 await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
-                publicPaths.push(publicPath)
             } else {
                 let publicPath = "./public/" + fp
                 let bunFile = Bun.file(relPath)
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
                 await Bun.write(publicPath, bunFile)
-                publicPaths.push(publicPath)
             }
         } 
     }
@@ -106,112 +98,106 @@ async function buildStaticSite() {
         Bun.write(servefp, JSON.stringify({cleanUrls: true}, null, 4))
     }
 
-    return await makeRoutes(publicPaths)
+    console.log(`Done in ${(performance.now() - start).toFixed(2)} ms`)
 
 }
 
-async function tailwindReload() {
-    await $`npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`.text()
-    return "CSS refreshed!"
+
+async function runInDevMode() {
+
+    let cfg = await getConfig()
+    cfg.debug = true
+    console.log("Server config:", cfg)
+
+    await buildStaticSite(cfg, "index.html")
+    let routes = await getRoutes()
+    
+    let filesChanged = true
+
+    Bun.serve({
+        async fetch(req) {
+
+            const url = new URL(req.url)
+
+            if (url.pathname.includes("__reload")) {
+                if (filesChanged == true) {
+                    filesChanged = false
+                    return new Response("Reload true")
+                } else {
+                    return new Response("Reload false")
+                }
+            }
+
+            if (routes[url.pathname]) {
+                return new Response(Bun.file(routes[url.pathname]))
+            }
+
+            return new Response("Page does not exist!")
+        },
+        development: true,
+        port: cfg.port,
+    })
+
+    console.log("Watching 'site' for changes...")
+    watch(
+        import.meta.dir + "/site",
+        { recursive: true },
+        async (event, filename) => {
+            console.log(`Detected ${event} in ${filename}`)
+            if (filename){
+                await buildStaticSite(cfg, filename)
+                routes = await getRoutes()
+                filesChanged = true
+            }
+        },
+    )
+
 }
 
-async function refreshStaticSite(filename: string) {
-    let start = performance.now()
-    if (filename.endsWith(".html") || filename.endsWith(".css") || filename.endsWith(".js")) {
-        await tailwindReload()
-        let routes = await buildStaticSite()
-        console.log(`Created site in ${(performance.now() - start).toFixed(2)} ms`)
-        return routes
-    }
-    return {}
+
+async function runInProdMode() {
+
+    let cfg = await getConfig()
+    cfg.debug = false
+    console.log("Server config:", cfg)
+
+    let routes = await getRoutes()
+
+    Bun.serve({
+        async fetch(req) {
+
+            const url = new URL(req.url)
+
+            if (routes[url.pathname]) {
+                console.log(new Date().toISOString(), routes[url.pathname])
+                return new Response(Bun.file(routes[url.pathname]))
+            }
+
+            return new Response("Page does not exist!")
+        },
+        development: false,
+        port: cfg.port,
+        hostname: "0.0.0.0"
+    })
+
 }
 
 async function main(){
-
     if (process.env.DEV == undefined) {
-        console.log("Build public assets")
-        await refreshStaticSite("index.html")
-        return "exited"
+        let cfg = await getConfig()
+        cfg.debug = false
+        await buildStaticSite(cfg, "index.html")
+        return "Public folder with static site was built."
     }
-
-    if (process.env.DEV == "0") {
-
-        console.log("Serving site from public folder....")
-
-        let routes = await getPublicRoutes()
-
-        Bun.serve({
-            async fetch(req) {
-
-                const url = new URL(req.url)
-
-                if (routes[url.pathname]) {
-                    console.log(routes[url.pathname])
-                    return new Response(Bun.file(routes[url.pathname]))
-                }
-
-                return new Response("Page does not exist!")
-            },
-            development: false,
-            port: PORT,
-            hostname: "0.0.0.0"
-        })
-    
-        return "exited"
-
+    else if (process.env.DEV == "off") {
+        console.log("Waiting for requests...")
+        await runInProdMode()
     }
-
-    if (process.env.DEV == "1") {
-
-        console.log("Dev mode")
-
-        let routes = await refreshStaticSite("index.html")
-    
-        let filesChanged = true
-
-        Bun.serve({
-            async fetch(req) {
-
-                const url = new URL(req.url)
-
-                if (url.pathname.includes("__reload")) {
-                    if (filesChanged == true) {
-                        filesChanged = false
-                        return new Response("Reload true")
-                    } else {
-                        return new Response("Reload false")
-                    }
-                }
-
-                if (routes[url.pathname]) {
-                    return new Response(Bun.file(routes[url.pathname]))
-                }
-
-                return new Response("Page does not exist!")
-            },
-            development: true,
-            port: PORT,
-        })
-
-        console.log("Watching 'site' for changes...")
-        watch(
-            import.meta.dir + "/site",
-            { recursive: true },
-            (event, filename) => {
-                console.log(`Detected ${event} in ${filename}`)
-                if (filename){
-                    refreshStaticSite(filename).then(res => {
-                        filesChanged = true
-                        console.log(res)
-                    })
-                }
-            },
-        )
-
-        return "exited"
+    else if (process.env.DEV == "on") {
+        console.log("Development mode...")
+        await runInDevMode()
     }
-
 }
 
 
-main().then(res => console.log(res))
+await main()

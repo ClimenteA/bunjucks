@@ -11,11 +11,11 @@ Create static html static websites with [Nunjucks](https://mozilla.github.io/nun
 ## Quickstart
 
 - Clone this repository;
-- 
-- `bun run index.ts`: build `public` folder with static website from `site` folder;
-- `PROD=1 bun run index.ts`: serve public static website in production;
-- [`serve -l 5173`](https://www.npmjs.com/package/serve): inside public folder you could run serve from vercel;
-
+- To create a new route/page in the `pages` folder create a new html file. Make sure to name files/folders inside pages url-friendly (letters, numbers, and minus sign `-`).
+- `bun run index.ts`: this command will scan `site` folder and compile the static website in `public` folder;
+- `DEV=on bun run index.ts`: use this command while working on the website for hot reload;
+- Run `bun run index.ts` to generate prod static website then `DEV=off bun run index.ts` to serve static website in prod; 
+- To serve static website generated you could use [serve package from vercel](https://www.npmjs.com/package/serve) using this command `serve -l 5173` from inside public folder;
 
 
 Folder structure:
@@ -23,30 +23,43 @@ Folder structure:
 ```shell
 site
 ├── assets
-│   ├── reload.js    -> /assets/reload.js
-│   ├── robots.txt   -> /robots.txt
-│   ├── styles.css   -> /styles.css
-│   └── sitemap.xml  -> /sitemap.xml
+│   ├── bunjucks.jpeg -> /assets/bunjucks.jpeg
+│   ├── reload.js     -> /assets/reload.js (when DEV=on)
+│   ├── styles.css    -> /assets/styles.css 
+│   └── tailwind.css  ignored
 ├── layouts
 │   └── base.html
 ├── macros
 │   └── navbar.html
 └── pages
-    ├── about.html   -> /about
-    ├── blog
-    │   ├── how-to-make-a-server.html -> /blog/how-to-make-a-server
-    │   └── index.html -> /blog
-    └── index.html     -> /
+    ├── about.html                      -> /about
+    ├── blog                            
+    │   ├── how-to-make-pancakes.html   -> /blog/how-to-make-pancakes
+    │   └── index.html                  -> /blog 
+    └── index.html                      -> / 
 ```
 
 You have `site` directory which holds the following:
-- `assets`: here add your js, css, images or other static files, directories will be ignored (files: robots.txt, sitemap.xml are used for SEO and file reload.js for hot reload); 
+- `assets`: here add your js, css, images or other static files (files: robots.txt, sitemap.xml are used for SEO and file reload.js for hot reload); 
 - `layouts`: here add your [base.html](https://mozilla.github.io/nunjucks/templating.html#template-inheritance) aka layouts (each page could have a different layout);
-- `pages`: here add your website main pages, bassically what you see when visiting a website;
 - `macros`: here create [reusable html components](https://mozilla.github.io/nunjucks/templating.html#macro) (partials, widgets, etc) and import them in your layouts or pages.
+- `pages`: here add your website main pages, bassically what you see when visiting a web page;
 
 
-Routes will be created automatically from `pages` directory. Filenames and dirs will be converted to paths. File `index/html` is a bit "special" and will be used for root paths (/). Only one nested folder is allowed (see blog folder).
+Routes will be created automatically from `pages` directory. 
+Filenames and directories will be converted to paths. 
+File `index/html` is a bit "special" and will be used for root paths (/).
+
+In file `bunjucks.config.json` you have the following configuration:
+```js
+{
+    "port": 5173,               // change port if is in use on your machine
+    "domain": "localhost:5173", // when ready put here the website domain 
+    "use_tailwind": true,       // by default we are using tailwind, but you can turn it off
+    "store": {}                 // data you want to pass down to the html templates ({{ store.mydata }})  
+}
+```
+
 
 
 ## Why?
