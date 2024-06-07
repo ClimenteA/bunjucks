@@ -36,7 +36,9 @@ site
     ├── blog                            
     │   ├── how-to-make-pancakes.html   -> /blog/how-to-make-pancakes
     │   └── index.html                  -> /blog 
-    └── index.html                      -> / 
+    ├── index.html   -> / 
+    ├── robots.txt   -> /robots.txt  (for SEO)
+    └── sitemap.xml  -> /sitemap.xml (for SEO)
 ```
 
 You have `site` directory which holds the following:
@@ -49,6 +51,7 @@ You have `site` directory which holds the following:
 Routes will be created automatically from `pages` directory. 
 Filenames and directories will be converted to paths. 
 File `index/html` is a bit "special" and will be used for root paths (/).
+Files `robots.txt` and `sitemap.xml` are generated automatically from `bunjucks.config.json` and routes. 
 
 In file `bunjucks.config.json` you have the following configuration:
 ```js

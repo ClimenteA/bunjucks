@@ -20,7 +20,7 @@ async function getConfig(){
     return config
 }
 
-async function getRoutes(){
+async function getRoutes(cfg: Config){
 
     let routes: {[key: string]: string } = {}
     let filepaths = await readdir("./public", { recursive: true })
@@ -39,6 +39,22 @@ async function getRoutes(){
             routes[r] = relPath
         }  
     } 
+
+
+    nunjucks.configure('site', { autoescape: true })
+
+    let timestamp = new Date().toISOString()
+    let sitemapRoutes = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
+
+    console.log(sitemapRoutes)
+    
+    await fs.writeFile(
+        "./public/sitemap.xml", 
+        nunjucks.render(
+            "pages/sitemap.xml", 
+            {...cfg, routes: sitemapRoutes, timestamp: timestamp}
+        )
+    )
 
     console.log("Routes:", routes)
     
@@ -69,11 +85,11 @@ async function buildStaticSite(cfg: Config, filename: string) {
         let relPath = "./site/" + fp
         if ((await fs.lstat(relPath)).isDirectory()) continue
         if (fp == "assets/tailwind.css") continue
-        
+
         if (fp.startsWith("pages")) {
             let publicPath = "./public/" + fp.split("/").splice(1,).join("/")
             await fs.mkdir(path.dirname(publicPath), { recursive: true })
-            await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
+            await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
         } 
         
         if (fp.startsWith("assets")) {
@@ -81,8 +97,9 @@ async function buildStaticSite(cfg: Config, filename: string) {
                 if (fp.endsWith("reload.js") && cfg.debug == false) continue
                 let publicPath = "./public/" + fp
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
-                await fs.writeFile(publicPath, nunjucks.render(fp, { port: cfg.port, debug: cfg.debug, store: cfg.store }))
-            } else {
+                await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
+            }             
+            else {
                 let publicPath = "./public/" + fp
                 let bunFile = Bun.file(relPath)
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
@@ -107,7 +124,7 @@ async function runInDevMode() {
     console.log("Server config:", cfg)
 
     await buildStaticSite(cfg, "index.html")
-    let routes = await getRoutes()
+    let routes = await getRoutes(cfg)
     
     let filesChanged = true
 
@@ -143,7 +160,7 @@ async function runInDevMode() {
             console.log(`Detected ${event} in ${filename}`)
             if (filename){
                 await buildStaticSite(cfg, filename)
-                routes = await getRoutes()
+                routes = await getRoutes(cfg)
                 filesChanged = true
             }
         },
@@ -157,7 +174,7 @@ async function runInProdMode() {
     cfg.debug = false
     console.log("Server config:", cfg)
 
-    let routes = await getRoutes()
+    let routes = await getRoutes(cfg)
 
     Bun.serve({
         async fetch(req) {
@@ -183,7 +200,7 @@ async function main(){
         let cfg = await getConfig()
         cfg.debug = false
         await buildStaticSite(cfg, "index.html")
-        return "Public folder with static site was built."
+        await getRoutes(cfg)
     }
     else if (process.env.DEV == "off") {
         console.log("Waiting for requests...")
