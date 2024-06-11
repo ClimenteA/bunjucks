@@ -13,6 +13,7 @@ Create custom static html static websites with [Nunjucks](https://mozilla.github
 - Clone this repository;
 - To create a new route/page in `site/pages` directory create a new folder with the route path name (friendly url chars) and inside that folder create an `index.html` file with contents;
 - `bun run build`: this command will scan `site` folder and compile the static website in `public` folder;
+- (One-time) run `npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`;
 - `bun run dev`: use this command while working on the website for hot reload;
 - Run `bun run build` to generate prod static website then `bun run prod` to serve static website in prod; 
 - To serve static website generated you could use [serve package from vercel](https://www.npmjs.com/package/serve) using this command `serve -l 5173` from inside public folder;
