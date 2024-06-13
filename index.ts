@@ -33,11 +33,11 @@ async function getRoutes(cfg: Config){
         if (fp.endsWith("index.html")) {
             let r = fp.replace("/index.html", "").replace("index.html", "")
             if (!r.startsWith("/")) r = "/" + r
-            if (!cfg.domain.startsWith("!")) r = cfg.domain + r
+            if (cfg.domain.startsWith("github:")) r = cfg.domain.split("github:")[1] + r
             routes[r] = relPath
         } else {
             let r = "/" + fp.replace(".html", "")
-            if (!cfg.domain.startsWith("!")) r = cfg.domain + r
+            if (cfg.domain.startsWith("github:")) r = cfg.domain.split("github:")[1] + r
             routes[r] = relPath
         }  
     } 
@@ -47,6 +47,8 @@ async function getRoutes(cfg: Config){
 
     let timestamp = new Date().toISOString()
     let sitemapRoutes = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
+
+    console.log("heloooo:", sitemapRoutes)
 
     await fs.writeFile(
         "./public/sitemap.xml", 
