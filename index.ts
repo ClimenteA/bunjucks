@@ -14,15 +14,15 @@ interface Config {
     debug?: boolean
 }
 
-async function getConfig(){
+async function getConfig() {
     let file = Bun.file("./bunjucks.config.json")
     let config: Config = await file.json()
     return config
 }
 
-async function getRoutes(cfg: Config){
+async function getRoutes(cfg: Config) {
 
-    let routes: {[key: string]: string } = {}
+    let routes: { [key: string]: string } = {}
     let filepaths = await readdir("./public", { recursive: true })
 
     for (let fp of filepaths) {
@@ -31,35 +31,51 @@ async function getRoutes(cfg: Config){
         if (fp == "serve.json") continue
 
         if (fp.endsWith("index.html")) {
+
             let r = fp.replace("/index.html", "").replace("index.html", "")
             if (!r.startsWith("/")) r = "/" + r
-            if (cfg.domain.startsWith("github:")) r = cfg.domain.split("github:")[1] + r
+
+            if (cfg.domain.includes("github.io")) {
+                r = cfg.domain.split("github.io")[1] + r
+            }
+
             routes[r] = relPath
+
         } else {
             let r = "/" + fp.replace(".html", "")
-            if (cfg.domain.startsWith("github:")) r = cfg.domain.split("github:")[1] + r
-            routes[r] = relPath
-        }  
-    } 
 
+            if (!r.startsWith("/")) r = "/" + r
+
+            if (cfg.domain.includes("github.io")) {
+                r = cfg.domain.split("github.io")[1] + r
+            }
+
+            routes[r] = relPath
+        }
+    }
 
     nunjucks.configure('site', { autoescape: true })
 
     let timestamp = new Date().toISOString()
     let sitemapRoutes = Array.from(Object.keys(routes)).filter(route => !route.includes("."))
 
-    console.log("heloooo:", sitemapRoutes)
+    let domain = cfg.domain
+    if (cfg.domain.includes("github.io")) {
+        domain = cfg.domain.split("/")[0]
+    }
 
     await fs.writeFile(
-        "./public/sitemap.xml", 
+        "./public/sitemap.xml",
         nunjucks.render(
-            "pages/sitemap.xml", 
-            {...cfg, routes: sitemapRoutes, timestamp: timestamp}
+            "pages/sitemap.xml",
+            { domain: domain, routes: sitemapRoutes, timestamp: timestamp }
         )
     )
 
+    await fs.writeFile("./public/robots.txt", nunjucks.render("pages/robots.txt", cfg))
+
     console.log("Routes:", routes)
-    
+
     return routes
 }
 
@@ -67,22 +83,27 @@ async function tailwindBuild() {
     await $`npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css`.text()
 }
 
-async function buildStaticSite(cfg: Config, filename: string) {
+async function buildStaticSite(initConfig: Config, filename: string) {
 
     if (!(filename.endsWith(".html") || filename.endsWith(".css") || filename.endsWith(".js"))) {
         return
     }
 
-    let start = performance.now()   
-    
+    let start = performance.now()
+
+    let cfg = {...initConfig}
+
     if (cfg.use_tailwind) {
         await tailwindBuild()
     }
 
-    if (cfg.domain.startsWith("!")) {
+    if (cfg.domain.includes("github.io")) {
+        cfg.domain = cfg.domain.split("github.io")[1]
+    } 
+    else if (!cfg.domain.includes("github.io") && cfg.domain.length > 0) {
         cfg.domain = ""
     }
-    
+
     let filepaths = await readdir("./site", { recursive: true })
     nunjucks.configure('site', { autoescape: true })
 
@@ -96,27 +117,27 @@ async function buildStaticSite(cfg: Config, filename: string) {
             let publicPath = "./public/" + fp.split("/").splice(1,).join("/")
             await fs.mkdir(path.dirname(publicPath), { recursive: true })
             await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
-        } 
-        
+        }
+
         if (fp.startsWith("assets")) {
             if (fp.endsWith(".js")) {
                 if (fp.endsWith("reload.js") && cfg.debug == false) continue
                 let publicPath = "./public/" + fp
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
                 await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
-            }             
+            }
             else {
                 let publicPath = "./public/" + fp
                 let bunFile = Bun.file(relPath)
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
                 await Bun.write(publicPath, bunFile)
             }
-        } 
+        }
     }
 
     let servefp = "./public/serve.json"
-    if(!await fs.exists(servefp)) {
-        Bun.write(servefp, JSON.stringify({cleanUrls: true}, null, 4))
+    if (!await fs.exists(servefp)) {
+        Bun.write(servefp, JSON.stringify({ cleanUrls: true }, null, 4))
     }
 
     console.log(`Done in ${(performance.now() - start).toFixed(2)} ms`)
@@ -131,7 +152,7 @@ async function runInDevMode() {
 
     await buildStaticSite(cfg, "index.html")
     let routes = await getRoutes(cfg)
-    
+
     let filesChanged = true
 
     Bun.serve({
@@ -150,7 +171,7 @@ async function runInDevMode() {
 
             if (routes[url.pathname]) {
                 return new Response(Bun.file(routes[url.pathname]))
-            } 
+            }
 
             return new Response(Bun.file(routes["/404"]))
         },
@@ -164,7 +185,7 @@ async function runInDevMode() {
         { recursive: true },
         async (event, filename) => {
             console.log(`Detected ${event} in ${filename}`)
-            if (filename){
+            if (filename) {
                 await buildStaticSite(cfg, filename)
                 routes = await getRoutes(cfg)
                 filesChanged = true
@@ -201,7 +222,7 @@ async function runInProdMode() {
 
 }
 
-async function main(){
+async function main() {
     if (process.env.DEV == undefined) {
         let cfg = await getConfig()
         cfg.debug = false

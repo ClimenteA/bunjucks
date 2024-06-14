@@ -10,12 +10,14 @@ Create custom static html static websites with [Nunjucks](https://mozilla.github
 
 ## Quickstart
 
-- Clone this repository;
+- Clone this repository or Click on Use template;
 - To create a new route/page in `site/pages` directory create a new folder with the route path name (friendly url chars) and inside that folder create an `index.html` file with contents;
 - `bun run build`: this command will scan `site` folder and compile the static website in `public` folder;
 - `bun run dev`: use this command while working on the website for hot reload;
 - Run `bun run build` to generate prod static website then `bun run prod` to serve static website in prod; 
 - To serve static website generated you could use [serve package from vercel](https://www.npmjs.com/package/serve) using this command `serve -l 5173` from inside public folder;
+
+Note: If tailwind fails run this command: `npx tailwindcss -i ./site/assets/tailwind.css -o ./site/assets/styles.css` and try again `bun run dev`. 
 
 
 Folder structure:
@@ -72,8 +74,8 @@ In file `bunjucks.config.json` you have the following configuration:
 ## Deploy to Github Pages
 
 - In github, go to Settings tab look for Pages on the left panel. On Pages, select branch main and folder docs then click save (a github action will run each time you push changes to repo);
-- In bunjucks.config.json add what comes after yourgithubusername.github.io/**repo-name** in my case it was /bunjucks: `"domain": "github:/bunjucks"`;
-- While adding links make sure to add the domain prefix to links and static files, like: `href="{{domain}}/etc/route`, `href="{{domain}}/blog"` (you don't need this if you deploy it with `serve` or `bun run prod`); 
+- In bunjucks.config.json add the github pages url: **yourgithubusername.github.io/repo-name** in my case it was: `"domain": "climentea.github.io/bunjucks"`;
+- While adding links make sure to add the domain prefix to links and static files, like: `href="{{domain}}/etc/route`, `href="{{domain}}/blog"` (you don't need this if you deploy it with the other methods); 
 - Run `bun run build` and rename `public` folder generated to `docs`;
 
 
@@ -93,7 +95,7 @@ In file `bunjucks.config.json` you have the following configuration:
 
 ## Deploy to any Cloud VM/VPS (AWS, GCP, Azure, ROMARG)
 
-- In bunjucks.config.json add your domain: `"domain": "!mysite.com"` (put `!` in front of the domain if you use {{domain}} as a prefix for links, src - see gitub pages deploy);
+- In bunjucks.config.json add your domain: `"domain": "mysite.com"`;
 - Run `bun run build` rename `public` to `static-site` and place it next to `docker-compose.yml` and `Caddyfile` (Checkout `docker-deploy` inside this repo);
 - Install (if not already) docker on the VM;
 - Modify `Caddyfile` with your domain and email;

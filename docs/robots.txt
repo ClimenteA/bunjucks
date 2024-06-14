@@ -1,4 +1,4 @@
 User-agent: *
 Disallow:
 
-Sitemap: https:///bunjucks/sitemap.xml
+Sitemap: https://climentea.github.io/bunjucks/sitemap.xml
