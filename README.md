@@ -67,7 +67,7 @@ In file `bunjucks.config.json` you have the following configuration:
     "port": 5173,               // change port if is in use on your machine
     "domain": "localhost:5173", // when ready put here the website domain 
     "use_tailwind": true,       // by default we are using tailwind, but you can turn it off
-    "store": {}                 // data you want to pass down to the html templates ({{ store.mydata }})  
+    "store": {}                 // data you want to pass down to the html templates ({{ store.mydata }}). The envs (including .env) from process.env will be added to store variable. 
 }
 ```
 

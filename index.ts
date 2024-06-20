@@ -17,6 +17,13 @@ interface Config {
 async function getConfig() {
     let file = Bun.file("./bunjucks.config.json")
     let config: Config = await file.json()
+
+    if (config.store) {
+        config.store = process.env
+    } else {
+        config.store = {...process.env, ...config.store}
+    }
+    
     return config
 }
 
@@ -68,7 +75,7 @@ async function getRoutes(cfg: Config) {
         "./public/sitemap.xml",
         nunjucks.render(
             "pages/sitemap.xml",
-            { domain: domain, routes: sitemapRoutes, timestamp: timestamp }
+            { ...cfg, domain: domain, routes: sitemapRoutes, timestamp: timestamp }
         )
     )
 
