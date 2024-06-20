@@ -17,13 +17,7 @@ interface Config {
 async function getConfig() {
     let file = Bun.file("./bunjucks.config.json")
     let config: Config = await file.json()
-
-    if (config.store) {
-        config.store = process.env
-    } else {
-        config.store = {...process.env, ...config.store}
-    }
-    
+    config.store = config.store ? {...process.env, ...config.store} : process.env
     return config
 }
 
