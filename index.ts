@@ -125,7 +125,12 @@ async function buildStaticSite(initConfig: Config, filename: string) {
                 if (fp.endsWith("reload.js") && cfg.debug == false) continue
                 let publicPath = "./public/" + fp
                 await fs.mkdir(path.dirname(publicPath), { recursive: true })
-                await fs.writeFile(publicPath, nunjucks.render(fp, cfg))
+                try {
+                    await fs.writeFile(publicPath, nunjucks.render(fp, cfg))    
+                } catch (error) {
+                    let bunFile = Bun.file("./site/" + fp)
+                    await Bun.write(publicPath, bunFile)
+                }
             }
             else {
                 let publicPath = "./public/" + fp
