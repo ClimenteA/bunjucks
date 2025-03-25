@@ -5,6 +5,8 @@
     <img src="pics/bunjucks.jpeg" style="display: flex; justify-self: center" alt="drawing" width="150"/>
 </p>
 
+> I found 11tly to align with what I tried to do here. [Here is a tutorial on how to use it](https://dev.to/climentea/11ty-static-site-generator-tutorial-11ty-v3-15g3) 
+
 Create custom static html static websites with [Nunjucks](https://mozilla.github.io/nunjucks/), [Bun](https://bun.sh/) and [TailwindCSS](https://tailwindcss.com/). If you know Jinja2 or Nunjucks creating static websites will be a breeze. Of course, you can switch Nunjucks with other templating language you want [doT](https://olado.github.io/doT/), [handlebarsjs](https://handlebarsjs.com/), [ejs](https://ejs.co/), [underscorejs](https://underscorejs.org/) etc. You can opt-out tailwind if you want. 
 
 
